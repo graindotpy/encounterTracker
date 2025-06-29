@@ -42,7 +42,6 @@ def allowed_file(filename):
 def run_dump(save_path, dump_path):
     """Run dumper on save_path, write JSON to dump_path."""
     subprocess.run([DUMPER_PATH, save_path], check=True)
-    # dumper always writes all_pokemon.json at BASE_DIR
     if os.path.exists(dump_path):
         os.remove(dump_path)
     os.replace(os.path.join(BASE_DIR, 'all_pokemon.json'), dump_path)
@@ -57,35 +56,11 @@ INDEX_HTML = '''
   <title>Upload Save</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    header { position:relative; padding:1rem 0; }
-    .container { margin:1rem auto; max-width:90%; }
-    .pokemon-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20rem; }
-    .pokemon-card {
-      position:relative;
-      background:#1e1e1e;
-      border-radius:8px;
-      padding:1rem;
-      text-align:center;
-      transition: background-color 0.5s ease, filter 0.5s ease, opacity 0.5s ease;
-    }
-    .pokemon-card.dead {
-      background:#3a3a3a;
-      filter:grayscale(100%);
-      opacity:0.3;
-    }
-    .pokemon-card img.sprite {
-      position:absolute;
-      top:-10px;
-      right:-10px;
-      width:120px;
-      transition: opacity 0.5s ease;
-    }
-    .pokemon-card.dead img.sprite {
-      opacity:0;
-    }
-    .toggle-dead-btn { margin-top:.5rem; background:#d9534f; color:#fff; padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; }
-    .refresh-btn { position:absolute; top:10px; right:10px; width:40px; cursor:pointer; }
-    .hidden-file-input { display:none; }
+    body { background-color: #121212; color: #e0e0e0; }
+    header { padding: 1rem 0; }
+    input[type=file], button { background:#1e1e1e; color:#e0e0e0; border:1px solid #333; border-radius:4px; padding:.5rem; }
+    button:hover { background:#333; }
+    .container { margin:1rem auto; max-width:90%; background:#1e1e1e; padding:2rem; border-radius:8px; }
   </style>
 </head>
 <body>
@@ -95,9 +70,7 @@ INDEX_HTML = '''
   <div class="container">
     <h1>Upload Your Pokémon Save</h1>
     {% with msgs = get_flashed_messages() %}
-      {% if msgs %}
-        {% for m in msgs %}<div>{{ m }}</div>{% endfor %}
-      {% endif %}
+      {% if msgs %}{% for m in msgs %}<div>{{ m }}</div>{% endfor %}{% endif %}
     {% endwith %}
     <form method="post" enctype="multipart/form-data">
       <input type="file" name="savefile" accept=".sav" required>
@@ -120,14 +93,15 @@ RESULTS_HTML = '''
     .container { margin:1rem auto; max-width:90%; }
     .pokemon-grid {
       display: grid;
-      grid-template-columns: repeat(3,1fr);
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap:2rem;
       width:100%;
       max-width:2400px;
       margin:0 auto;
     }
     .pokemon-card {
-      position: relative;
+      max-width: 280px;
+      margin: 0 auto;
       background: #1e1e1e;
       border-radius: 8px;
       padding: 1rem;
@@ -144,30 +118,12 @@ RESULTS_HTML = '''
       top: -10px;
       right: -10px;
       width: 120px;
-      height: auto;
       transition: opacity 0.5s ease;
     }
-    .pokemon-card.dead img.sprite {
-      opacity: 0;
-    }
-    .toggle-dead-btn {
-      margin-top: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #d9534f;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1.25rem;
-    }
-    .refresh-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 40px;
-      cursor: pointer;
-    }
-    .hidden-file-input { display: none; }
+    .pokemon-card.dead img.sprite { opacity:0; }
+    .toggle-dead-btn { margin-top:.5rem; background:#d9534f; color:#fff; padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; }
+    .refresh-btn { position:absolute; top:10px; right:10px; width:40px; cursor:pointer; }
+    .hidden-file-input { display:none; }
   </style>
 </head>
 <body>
@@ -195,12 +151,11 @@ RESULTS_HTML = '''
     <p><a href="{{ url_for('reset') }}">Upload Another File</a></p>
   </div>
   <script>
-    document.getElementById('refresh-input').addEventListener('change', function() { document.getElementById('refresh-form').submit(); });
-    document.querySelectorAll('.toggle-dead-btn').forEach(btn => btn.addEventListener('click', () => {
-      const id = btn.dataset.id; const card = document.getElementById(`card-${id}`);
-      const isDead = !card.classList.contains('dead');
-      fetch('/mark_dead', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id,dead:isDead}) })
-      .then(() => { card.classList.toggle('dead',isDead); btn.textContent = isDead ? 'Revive':'☠'; });
+    document.getElementById('refresh-input').addEventListener('change', function(){document.getElementById('refresh-form').submit();});
+    document.querySelectorAll('.toggle-dead-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      const id=btn.dataset.id,card=document.getElementById(`card-${id}`),isDead=!card.classList.contains('dead');
+      fetch('/mark_dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,dead:isDead})})
+      .then(()=>{card.classList.toggle('dead',isDead);btn.textContent=isDead?'Revive':'☠';});
     }));
   </script>
 </body>
@@ -209,54 +164,40 @@ RESULTS_HTML = '''
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    session.permanent = True
-    if request.method == 'GET' and session.get('dump_file'):
+    session.permanent=True
+    if request.method=='GET' and session.get('dump_file'):
         return redirect(url_for('show_results'))
-    if request.method == 'POST':
-        file = request.files.get('savefile')
-        if not file or not allowed_file(file.filename): flash('Invalid .sav'); return redirect(request.url)
-        file_id = str(uuid.uuid4())
-        save_path = os.path.join(UPLOAD_FOLDER, f"{file_id}.sav")
-        file.save(save_path)
-        dump_path = os.path.join(UPLOAD_FOLDER, f"{file_id}.json")
-        is_refresh = request.form.get('refresh')
-        if not is_refresh: session['dead_map'] = {}
-        session['dump_file'] = dump_path
-        run_dump(save_path, dump_path)
+    if request.method=='POST':
+        file=request.files.get('savefile')
+        if not file or not allowed_file(file.filename): flash('Invalid .sav');return redirect(request.url)
+        fid=str(uuid.uuid4());save_path=os.path.join(UPLOAD_FOLDER,f"{fid}.sav");file.save(save_path)
+        dump_path=os.path.join(UPLOAD_FOLDER,f"{fid}.json");is_refresh=request.form.get('refresh')
+        if not is_refresh: session['dead_map']={}
+        session['dump_file']=dump_path
+        run_dump(save_path,dump_path)
         return redirect(url_for('show_results'))
     return render_template_string(INDEX_HTML)
 
 @app.route('/reset')
-def reset():
-    session.pop('dump_file', None)
-    session.pop('dead_map', None)
-    return redirect(url_for('upload_file'))
+def reset(): session.pop('dump_file',None);session.pop('dead_map',None);return redirect(url_for('upload_file'))
 
 @app.route('/results')
 def show_results():
-    dump_file = session.get('dump_file')
-    if not dump_file or not os.path.isfile(dump_file): return redirect(url_for('upload_file'))
-    data = json.load(open(dump_file))
-    dead_map = session.get('dead_map', {})
-    results = []
-    for idx, e in enumerate(data):
-        name = e.get('Name','').lower()
-        img = POKEAPI_CACHE.get(name) or ''
+    df=session.get('dump_file');
+    if not df or not os.path.isfile(df): return redirect(url_for('upload_file'))
+    data=json.load(open(df));dm=session.get('dead_map',{});res=[]
+    for idx,e in enumerate(data):
+        nm=e.get('Name','').lower();img=POKEAPI_CACHE.get(nm) or ''
         if not img:
-            try:
-                r = requests.get(f'https://pokeapi.co/api/v2/pokemon/{name}'); r.raise_for_status()
-                img = r.json().get('sprites',{}).get('other',{}).get('showdown',{}).get('front_default','')
-            except: img = ''
-            POKEAPI_CACHE[name] = img; json.dump(POKEAPI_CACHE, open(CACHE_PATH,'w'))
-        loc = LOCATION_MAP.get(str(e.get('MetLocation','')),'Unknown')
-        dead = dead_map.get(str(idx),False)
-        results.append({'MetLocation':loc,'Nickname':e.get('Nickname'),'Level':e.get('Level'),'image_url':img,'dead':dead})
-    return render_template_string(RESULTS_HTML, pokemon_list=results)
+            try:r=requests.get(f'https://pokeapi.co/api/v2/pokemon/{nm}');r.raise_for_status();img=r.json().get('sprites',{}).get('other',{}).get('showdown',{}).get('front_default','')
+            except:img=''
+            POKEAPI_CACHE[nm]=img;json.dump(POKEAPI_CACHE,open(CACHE_PATH,'w'))
+        loc=LOCATION_MAP.get(str(e.get('MetLocation','')),'Unknown');dead=dm.get(str(idx),False)
+        res.append({'MetLocation':loc,'Nickname':e.get('Nickname'),'Level':e.get('Level'),'image_url':img,'dead':dead})
+    return render_template_string(RESULTS_HTML,pokemon_list=res)
 
 @app.route('/mark_dead', methods=['POST'])
 def mark_dead():
-    d = request.get_json(); i = str(d.get('id')); dm = session.get('dead_map', {});
-    dm[i] = d.get('dead', False); session['dead_map'] = dm; return ('', 204)
+    d=request.get_json();i=str(d.get('id'));dm=session.get('dead_map',{});dm[i]=d.get('dead',False);session['dead_map']=dm;return('','204')
 
-if __name__=='__main__':
-    app.run(debug=True)
+if __name__=='__main__':app.run(debug=True)
