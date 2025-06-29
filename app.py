@@ -45,7 +45,7 @@ def run_dump(path):
     """Run the external dumper on a saved file path."""
     subprocess.run([DUMPER_PATH, path], check=True)
 
-# HTML Templates with dark mode on upload page
+# HTML Templates
 INDEX_HTML = '''
 <!doctype html>
 <html lang="en" class="dark">
@@ -55,32 +55,11 @@ INDEX_HTML = '''
   <title>Upload Save</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    body {
-      background-color: #121212;
-      color: #e0e0e0;
-    }
-    header {
-      background: none;
-      border-bottom: none;
-      padding: 1rem 0;
-    }
-    input[type=file], button {
-      background-color: #1e1e1e;
-      color: #e0e0e0;
-      border: 1px solid #333;
-      border-radius: 4px;
-      padding: 0.5rem;
-    }
-    button:hover {
-      background-color: #333;
-    }
-    .container {
-      margin: 1rem auto;
-      max-width: 90%;
-      background-color: #1e1e1e;
-      padding: 2rem;
-      border-radius: 8px;
-    }
+    body { background-color: #121212; color: #e0e0e0; }
+    header { background: none; border-bottom: none; padding: 1rem 0; }
+    input[type=file], button { background-color: #1e1e1e; color: #e0e0e0; border: 1px solid #333; border-radius: 4px; padding: 0.5rem; }
+    button:hover { background-color: #333; }
+    .container { margin: 1rem auto; max-width: 90%; background-color: #1e1e1e; padding: 2rem; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -91,9 +70,7 @@ INDEX_HTML = '''
     <h1>Upload Your Pokémon Save</h1>
     {% with msgs = get_flashed_messages() %}
       {% if msgs %}
-        {% for m in msgs %}
-          <div>{{ m }}</div>
-        {% endfor %}
+        {% for m in msgs %}<div>{{ m }}</div>{% endfor %}
       {% endif %}
     {% endwith %}
     <form method="post" enctype="multipart/form-data">
@@ -131,6 +108,7 @@ RESULTS_HTML = '''
     <img src="{{ url_for('static',filename='img/logo.png') }}" alt="Logo" style="height:40vh;display:block;margin:0 auto;">
     <!-- Hidden form to re-upload .sav -->
     <form id="refresh-form" method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}" style="display:none;">
+      <input type="hidden" name="refresh" value="1">
       <input type="file" id="refresh-input" name="savefile" accept=".sav" class="hidden-file-input" required>
     </form>
     <img class="refresh-btn" src="{{ url_for('static',filename='img/refresh.png') }}" alt="Refresh" onclick="document.getElementById('refresh-input').click()">
@@ -183,11 +161,14 @@ def upload_file():
         if not file or not allowed_file(file.filename):
             flash('Please upload a valid .sav file')
             return redirect(request.url)
+        is_refresh = request.form.get('refresh') == '1'
         file_id = f"{uuid.uuid4()}.sav"
         save_path = os.path.join(UPLOAD_FOLDER, secure_filename(file_id))
         file.save(save_path)
         session['save_path'] = save_path
-        session['dead_map'] = {}
+        # Only clear dead_map on a fresh upload, not on refresh
+        if not is_refresh:
+            session['dead_map'] = {}
         try:
             run_dump(save_path)
         except:
@@ -221,13 +202,7 @@ def show_results():
             json.dump(POKEAPI_CACHE, open(CACHE_PATH, 'w'))
         loc = LOCATION_MAP.get(str(entry.get('MetLocation', '')), f'Unknown ({entry.get("MetLocation")})')
         dead_flag = dead_map.get(str(idx), False)
-        results.append({
-            'MetLocation': loc,
-            'Nickname': entry.get('Nickname'),
-            'Level': entry.get('Level'),
-            'image_url': image_url,
-            'dead': dead_flag
-        })
+        results.append({ 'MetLocation': loc, 'Nickname': entry.get('Nickname'), 'Level': entry.get('Level'), 'image_url': image_url, 'dead': dead_flag })
     return render_template_string(RESULTS_HTML, pokemon_list=results)
 
 @app.route('/mark_dead', methods=['POST'])
