@@ -1,0 +1,152 @@
+[
+  {
+    "Name": "Milotic",
+    "Nickname": "C Medici",
+    "Level": 31,
+    "MetLocation": 50
+  },
+  {
+    "Name": "Rotom",
+    "Nickname": "Boudica",
+    "Level": 30,
+    "MetLocation": 70
+  },
+  {
+    "Name": "Mightyena",
+    "Nickname": "Hypatia",
+    "Level": 30,
+    "MetLocation": 17
+  },
+  {
+    "Name": "Gyarados",
+    "Nickname": "Theodora",
+    "Level": 30,
+    "MetLocation": 33
+  },
+  {
+    "Name": "Nidoking",
+    "Nickname": "Musa",
+    "Level": 31,
+    "MetLocation": 16
+  },
+  {
+    "Name": "Quilava",
+    "Nickname": "Sun-sin",
+    "Level": 30,
+    "MetLocation": 3
+  },
+  {
+    "Name": "Umbreon",
+    "Nickname": "Genghis",
+    "Level": 30,
+    "MetLocation": 1
+  },
+  {
+    "Name": "Monferno",
+    "Nickname": "Lee",
+    "Level": 30,
+    "MetLocation": 16
+  },
+  {
+    "Name": "Aerodactyl",
+    "Nickname": "Rhazes",
+    "Level": 30,
+    "MetLocation": 94
+  },
+  {
+    "Name": "Cherrim",
+    "Nickname": "Seacole",
+    "Level": 30,
+    "MetLocation": 58
+  },
+  {
+    "Name": "Gardevoir",
+    "Nickname": "Bolivar",
+    "Level": 30,
+    "MetLocation": 19
+  },
+  {
+    "Name": "Dugtrio",
+    "Nickname": "Alfred",
+    "Level": 30,
+    "MetLocation": 59
+  },
+  {
+    "Name": "Loudred",
+    "Nickname": "Hatshepsut",
+    "Level": 30,
+    "MetLocation": 46
+  },
+  {
+    "Name": "Grotle",
+    "Nickname": "Edison",
+    "Level": 30,
+    "MetLocation": 2
+  },
+  {
+    "Name": "Crawdaunt",
+    "Nickname": "Ashoka",
+    "Level": 30,
+    "MetLocation": 18
+  },
+  {
+    "Name": "Metang",
+    "Nickname": "Gertrude B",
+    "Level": 30,
+    "MetLocation": 8
+  },
+  {
+    "Name": "Beedrill",
+    "Nickname": "Tecumseh",
+    "Level": 30,
+    "MetLocation": 48
+  },
+  {
+    "Name": "Shellder",
+    "Nickname": "Lovelace",
+    "Level": 30,
+    "MetLocation": 20
+  },
+  {
+    "Name": "Ivysaur",
+    "Nickname": "Battuta",
+    "Level": 30,
+    "MetLocation": 6
+  },
+  {
+    "Name": "Crobat",
+    "Nickname": "Scholl",
+    "Level": 30,
+    "MetLocation": 57
+  },
+  {
+    "Name": "Togepi",
+    "Nickname": "al-Rashid",
+    "Level": 22,
+    "MetLocation": 122
+  },
+  {
+    "Name": "Gligar",
+    "Nickname": "Erikson",
+    "Level": 22,
+    "MetLocation": 21
+  },
+  {
+    "Name": "Bibarel",
+    "Nickname": "Tomoe",
+    "Level": 16,
+    "MetLocation": 76
+  },
+  {
+    "Name": "Snorlax",
+    "Nickname": "Suleiman",
+    "Level": 24,
+    "MetLocation": 47
+  },
+  {
+    "Name": "Elekid",
+    "Nickname": "Toussaint",
+    "Level": 24,
+    "MetLocation": 93
+  }
+]

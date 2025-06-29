@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-DUMPER_PATH = os.path.join(BASE_DIR, 'jsonDumper', 'PkhexDump.exe')
+DUMPER_PATH = os.path.join(BASE_DIR, 'jsonDumper', 'net9.0', 'linux-x64', 'PkhexDump')
 CACHE_PATH = os.path.join(BASE_DIR, 'pokeapi_cache.json')
 DUMP_JSON_PATH = os.path.join(BASE_DIR, 'all_pokemon.json')
 LOCATION_MAP_PATH = os.path.join(BASE_DIR, 'location_map.json')
