@@ -126,7 +126,7 @@ RESULTS_HTML = '''
       </div>
       {% endfor %}
     </div>
-    <p><a href="/">Upload Another File</a></p>
+    <p><a href="{{ url_for('reset') }}">Upload Another File</a></p>
   </div>
   <script>
     document.getElementById('refresh-input').addEventListener('change', function() {
@@ -176,6 +176,13 @@ def upload_file():
             return redirect(request.url)
         return redirect(url_for('show_results'))
     return render_template_string(INDEX_HTML)
+
+@app.route('/reset')
+def reset():
+    # Clear saved path and dead state, then go to upload screen
+    session.pop('save_path', None)
+    session.pop('dead_map', None)
+    return redirect(url_for('upload_file'))
 
 @app.route('/results')
 def show_results():
