@@ -94,7 +94,7 @@ RESULTS_HTML = '''
     .pokemon-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
+      gap: 4rem;
       width: 100%;
       max-width: 2400px;
       margin: 0 auto;
