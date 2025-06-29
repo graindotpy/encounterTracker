@@ -10,10 +10,9 @@ from werkzeug.utils import secure_filename
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-# Use Linux dumper binary instead of Windows exe
+# Linux dumper
 DUMPER_PATH = os.path.join(BASE_DIR, 'jsonDumper', 'net9.0', 'linux-x64', 'PkhexDump')
 CACHE_PATH = os.path.join(BASE_DIR, 'pokeapi_cache.json')
-DUMP_JSON_PATH = os.path.join(BASE_DIR, 'all_pokemon.json')
 LOCATION_MAP_PATH = os.path.join(BASE_DIR, 'location_map.json')
 
 # Ensure uploads directory exists
@@ -33,7 +32,6 @@ except Exception:
 # Flask app
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
-# Use permanent sessions stored in cookies
 app.config['SESSION_PERMANENT'] = True
 app.permanent_session_lifetime = timedelta(days=3650)
 
@@ -41,11 +39,15 @@ app.permanent_session_lifetime = timedelta(days=3650)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'sav'
 
-def run_dump(path):
-    """Run the external dumper on a saved file path."""
-    subprocess.run([DUMPER_PATH, path], check=True)
+def run_dump(save_path, dump_path):
+    """Run dumper on save_path, write JSON to dump_path."""
+    subprocess.run([DUMPER_PATH, save_path], check=True)
+    # dumper always writes all_pokemon.json at BASE_DIR
+    if os.path.exists(dump_path):
+        os.remove(dump_path)
+    os.replace(os.path.join(BASE_DIR, 'all_pokemon.json'), dump_path)
 
-# HTML Templates
+# Templates
 INDEX_HTML = '''
 <!doctype html>
 <html lang="en" class="dark">
@@ -56,10 +58,10 @@ INDEX_HTML = '''
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
     body { background-color: #121212; color: #e0e0e0; }
-    header { background: none; border-bottom: none; padding: 1rem 0; }
-    input[type=file], button { background-color: #1e1e1e; color: #e0e0e0; border: 1px solid #333; border-radius: 4px; padding: 0.5rem; }
-    button:hover { background-color: #333; }
-    .container { margin: 1rem auto; max-width: 90%; background-color: #1e1e1e; padding: 2rem; border-radius: 8px; }
+    header { padding: 1rem 0; }
+    input[type=file], button { background:#1e1e1e; color:#e0e0e0; border:1px solid #333; border-radius:4px; padding:.5rem; }
+    button:hover { background:#333; }
+    .container { margin:1rem auto; max-width:90%; background:#1e1e1e; padding:2rem; border-radius:8px; }
   </style>
 </head>
 <body>
@@ -81,7 +83,6 @@ INDEX_HTML = '''
 </body>
 </html>
 '''
-
 RESULTS_HTML = '''
 <!doctype html>
 <html lang="en">
@@ -91,22 +92,20 @@ RESULTS_HTML = '''
   <title>Your Caught Pokémon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <style>
-    header { background: none; border-bottom: none; }
+    header { position:relative; padding:1rem 0; }
     .container { margin:1rem auto; max-width:90%; }
-    .pokemon-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20rem; width:100%; max-width:2400px; margin:0 auto; }
-    .pokemon-card { position:relative; background:#1e1e1e; border-radius:8px; padding:1rem; text-align:center; transition:background .3s,filter .3s,opacity .3s; }
+    .pokemon-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20rem; }
+    .pokemon-card { position:relative; background:#1e1e1e; border-radius:8px; padding:1rem; text-align:center; }
     .pokemon-card.dead { background:#3a3a3a; filter:grayscale(100%); opacity:.6; }
-    .pokemon-card img.sprite { position:absolute; top:-10px; right:-10px; width:120px; height:auto; transition:opacity .3s; }
-    .pokemon-card.dead img.sprite { opacity:0; }
-    .toggle-dead-btn { margin-top:.5rem; padding:.5rem 1rem; background:#d9534f; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:1.25rem; }
+    .pokemon-card img.sprite { position:absolute; top:-10px; right:-10px; width:120px; }
+    .toggle-dead-btn { margin-top:.5rem; background:#d9534f; color:#fff; padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; }
     .refresh-btn { position:absolute; top:10px; right:10px; width:40px; cursor:pointer; }
     .hidden-file-input { display:none; }
   </style>
 </head>
 <body>
-  <header style="position:relative;">
+  <header>
     <img src="{{ url_for('static',filename='img/logo.png') }}" alt="Logo" style="height:40vh;display:block;margin:0 auto;">
-    <!-- Hidden form to re-upload .sav -->
     <form id="refresh-form" method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}" style="display:none;">
       <input type="hidden" name="refresh" value="1">
       <input type="file" id="refresh-input" name="savefile" accept=".sav" class="hidden-file-input" required>
@@ -129,21 +128,12 @@ RESULTS_HTML = '''
     <p><a href="{{ url_for('reset') }}">Upload Another File</a></p>
   </div>
   <script>
-    document.getElementById('refresh-input').addEventListener('change', function() {
-      document.getElementById('refresh-form').submit();
-    });
+    document.getElementById('refresh-input').addEventListener('change', function() { document.getElementById('refresh-form').submit(); });
     document.querySelectorAll('.toggle-dead-btn').forEach(btn => btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const card = document.getElementById(`card-${id}`);
+      const id = btn.dataset.id; const card = document.getElementById(`card-${id}`);
       const isDead = !card.classList.contains('dead');
-      fetch('/mark_dead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, dead: isDead })
-      }).then(() => {
-        card.classList.toggle('dead', isDead);
-        btn.textContent = isDead ? 'Revive' : '☠';
-      });
+      fetch('/mark_dead', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id,dead:isDead}) })
+      .then(() => { card.classList.toggle('dead',isDead); btn.textContent = isDead ? 'Revive':'☠'; });
     }));
   </script>
 </body>
@@ -153,73 +143,53 @@ RESULTS_HTML = '''
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     session.permanent = True
-    # Redirect GET to /results if a save already exists
-    if request.method == 'GET' and session.get('save_path'):
+    if request.method == 'GET' and session.get('dump_file'):
         return redirect(url_for('show_results'))
     if request.method == 'POST':
         file = request.files.get('savefile')
-        if not file or not allowed_file(file.filename):
-            flash('Please upload a valid .sav file')
-            return redirect(request.url)
-        is_refresh = request.form.get('refresh') == '1'
-        file_id = f"{uuid.uuid4()}.sav"
-        save_path = os.path.join(UPLOAD_FOLDER, secure_filename(file_id))
+        if not file or not allowed_file(file.filename): flash('Invalid .sav'); return redirect(request.url)
+        file_id = str(uuid.uuid4())
+        save_path = os.path.join(UPLOAD_FOLDER, f"{file_id}.sav")
         file.save(save_path)
-        session['save_path'] = save_path
-        # Only clear dead_map on a fresh upload, not on refresh
-        if not is_refresh:
-            session['dead_map'] = {}
-        try:
-            run_dump(save_path)
-        except:
-            flash('Error processing save')
-            return redirect(request.url)
+        dump_path = os.path.join(UPLOAD_FOLDER, f"{file_id}.json")
+        is_refresh = request.form.get('refresh')
+        if not is_refresh: session['dead_map'] = {}
+        session['dump_file'] = dump_path
+        run_dump(save_path, dump_path)
         return redirect(url_for('show_results'))
     return render_template_string(INDEX_HTML)
 
 @app.route('/reset')
 def reset():
-    # Clear saved path and dead state, then go to upload screen
-    session.pop('save_path', None)
+    session.pop('dump_file', None)
     session.pop('dead_map', None)
     return redirect(url_for('upload_file'))
 
 @app.route('/results')
 def show_results():
-    try:
-        data = json.load(open(DUMP_JSON_PATH))
-    except:
-        flash('Error reading JSON dump')
-        return redirect(url_for('upload_file'))
-
+    dump_file = session.get('dump_file')
+    if not dump_file or not os.path.isfile(dump_file): return redirect(url_for('upload_file'))
+    data = json.load(open(dump_file))
     dead_map = session.get('dead_map', {})
     results = []
-    for idx, entry in enumerate(data):
-        name = entry.get('Name', '').lower()
-        image_url = POKEAPI_CACHE.get(name, '')
-        if not image_url:
+    for idx, e in enumerate(data):
+        name = e.get('Name','').lower()
+        img = POKEAPI_CACHE.get(name) or ''
+        if not img:
             try:
-                resp = requests.get(f'https://pokeapi.co/api/v2/pokemon/{name}')
-                resp.raise_for_status()
-                sprites = resp.json().get('sprites', {}).get('other', {}).get('showdown', {})
-                image_url = sprites.get('front_default', '')
-            except:
-                image_url = ''
-            POKEAPI_CACHE[name] = image_url
-            json.dump(POKEAPI_CACHE, open(CACHE_PATH, 'w'))
-        loc = LOCATION_MAP.get(str(entry.get('MetLocation', '')), f'Unknown ({entry.get("MetLocation")})')
-        dead_flag = dead_map.get(str(idx), False)
-        results.append({ 'MetLocation': loc, 'Nickname': entry.get('Nickname'), 'Level': entry.get('Level'), 'image_url': image_url, 'dead': dead_flag })
+                r = requests.get(f'https://pokeapi.co/api/v2/pokemon/{name}'); r.raise_for_status()
+                img = r.json().get('sprites',{}).get('other',{}).get('showdown',{}).get('front_default','')
+            except: img = ''
+            POKEAPI_CACHE[name] = img; json.dump(POKEAPI_CACHE, open(CACHE_PATH,'w'))
+        loc = LOCATION_MAP.get(str(e.get('MetLocation','')),'Unknown')
+        dead = dead_map.get(str(idx),False)
+        results.append({'MetLocation':loc,'Nickname':e.get('Nickname'),'Level':e.get('Level'),'image_url':img,'dead':dead})
     return render_template_string(RESULTS_HTML, pokemon_list=results)
 
 @app.route('/mark_dead', methods=['POST'])
 def mark_dead():
-    data = request.get_json()
-    idx = str(data.get('id'))
-    dead_map = session.get('dead_map', {})
-    dead_map[idx] = data.get('dead', False)
-    session['dead_map'] = dead_map
-    return ('', 204)
+    d = request.get_json(); i = str(d.get('id')); dm = session.get('dead_map', {});
+    dm[i] = d.get('dead', False); session['dead_map'] = dm; return ('', 204)
 
-if __name__ == '__main__':
+if __name__=='__main__':
     app.run(debug=True)
