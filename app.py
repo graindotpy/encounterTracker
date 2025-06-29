@@ -93,11 +93,11 @@ RESULTS_HTML = '''
     .container { margin:1rem auto; max-width:90%; }
     .pokemon-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap:2rem;
-      width:100%;
-      max-width:2400px;
-      margin:0 auto;
+      grid-template-columns: repeat(3, minmax(300px, 1fr));
+      gap: 2rem;
+      width: 100%;
+      max-width: 2400px;
+      margin: 0 auto;
     }
     .pokemon-card {
       max-width: 280px;
