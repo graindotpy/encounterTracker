@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+# Use Linux dumper binary instead of Windows exe
 DUMPER_PATH = os.path.join(BASE_DIR, 'jsonDumper', 'net9.0', 'linux-x64', 'PkhexDump')
 CACHE_PATH = os.path.join(BASE_DIR, 'pokeapi_cache.json')
 DUMP_JSON_PATH = os.path.join(BASE_DIR, 'all_pokemon.json')
@@ -128,6 +129,7 @@ RESULTS_HTML = '''
 <body>
   <header style="position:relative;">
     <img src="{{ url_for('static',filename='img/logo.png') }}" alt="Logo" style="height:40vh;display:block;margin:0 auto;">
+    <!-- Hidden form to re-upload .sav -->
     <form id="refresh-form" method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}" style="display:none;">
       <input type="file" id="refresh-input" name="savefile" accept=".sav" class="hidden-file-input" required>
     </form>
@@ -173,6 +175,9 @@ RESULTS_HTML = '''
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     session.permanent = True
+    # Redirect GET to /results if a save already exists
+    if request.method == 'GET' and session.get('save_path'):
+        return redirect(url_for('show_results'))
     if request.method == 'POST':
         file = request.files.get('savefile')
         if not file or not allowed_file(file.filename):
