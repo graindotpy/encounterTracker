@@ -93,20 +93,20 @@ RESULTS_HTML = '''
     .container { margin:1rem auto; max-width:90%; }
     .pokemon-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 2rem;
       width: 100%;
       max-width: 2400px;
       margin: 0 auto;
     }
     .pokemon-card {
-      max-width: 280px;
-      margin: 0 auto;
+      position: relative;
       background: #1e1e1e;
       border-radius: 8px;
       padding: 1rem;
       text-align: center;
       transition: background-color 0.5s ease, filter 0.5s ease, opacity 0.5s ease;
+      overflow: visible;
     }
     .pokemon-card.dead {
       background: #3a3a3a;
