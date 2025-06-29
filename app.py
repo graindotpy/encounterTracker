@@ -118,13 +118,56 @@ RESULTS_HTML = '''
   <style>
     header { position:relative; padding:1rem 0; }
     .container { margin:1rem auto; max-width:90%; }
-    .pokemon-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20rem; }
-    .pokemon-card { position:relative; background:#1e1e1e; border-radius:8px; padding:1rem; text-align:center; }
-    .pokemon-card.dead { background:#3a3a3a; filter:grayscale(100%); opacity:.6; }
-    .pokemon-card img.sprite { position:absolute; top:-10px; right:-10px; width:120px; }
-    .toggle-dead-btn { margin-top:.5rem; background:#d9534f; color:#fff; padding:.5rem 1rem; border:none; border-radius:4px; cursor:pointer; }
-    .refresh-btn { position:absolute; top:10px; right:10px; width:40px; cursor:pointer; }
-    .hidden-file-input { display:none; }
+    .pokemon-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap:2rem;
+      width:100%;
+      max-width:2400px;
+      margin:0 auto;
+    }
+    .pokemon-card {
+      position: relative;
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      transition: background-color 0.5s ease, filter 0.5s ease, opacity 0.5s ease;
+    }
+    .pokemon-card.dead {
+      background: #3a3a3a;
+      filter: grayscale(100%);
+      opacity: 0.3;
+    }
+    .pokemon-card img.sprite {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 120px;
+      height: auto;
+      transition: opacity 0.5s ease;
+    }
+    .pokemon-card.dead img.sprite {
+      opacity: 0;
+    }
+    .toggle-dead-btn {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: #d9534f;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+    .refresh-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 40px;
+      cursor: pointer;
+    }
+    .hidden-file-input { display: none; }
   </style>
 </head>
 <body>
