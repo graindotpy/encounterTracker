@@ -80,6 +80,7 @@ INDEX_HTML = '''
 </body>
 </html>
 '''
+
 RESULTS_HTML = '''
 <!doctype html>
 <html lang="en">
@@ -94,7 +95,7 @@ RESULTS_HTML = '''
     .pokemon-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 4rem;
+      gap: 2rem;
       width: 100%;
       max-width: 2400px;
       margin: 0 auto;
@@ -139,12 +140,12 @@ RESULTS_HTML = '''
     <h1 style="text-align:center;margin-bottom:3rem;">Your Caught Pokémon</h1>
     <div class="pokemon-grid">
       {% for p in pokemon_list %}
-      <div class="pokemon-card {% if p.dead %}dead{% endif %}" id="card-{{ loop.index0 }}">
+      <div class="pokemon-card {% if p.dead %}dead{% endif %}" id="card-{{ p.key }}">
         <img class="sprite" src="{{ p.image_url }}" alt="sprite">
         <div>{{ p.MetLocation }}</div>
         <div>Nickname: {{ p.Nickname }}</div>
         <div>Level: {{ p.Level }}</div>
-        <button class="toggle-dead-btn" data-id="{{ loop.index0 }}">{{ 'Revive' if p.dead else '☠' }}</button>
+        <button class="toggle-dead-btn" data-key="{{ p.key }}">{{ 'Revive' if p.dead else '☠' }}</button>
       </div>
       {% endfor %}
     </div>
@@ -153,8 +154,10 @@ RESULTS_HTML = '''
   <script>
     document.getElementById('refresh-input').addEventListener('change', function(){document.getElementById('refresh-form').submit();});
     document.querySelectorAll('.toggle-dead-btn').forEach(btn=>btn.addEventListener('click',()=>{
-      const id=btn.dataset.id,card=document.getElementById(`card-${id}`),isDead=!card.classList.contains('dead');
-      fetch('/mark_dead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,dead:isDead})})
+      const key = btn.dataset.key;
+      const card = document.getElementById(`card-${key}`);
+      const isDead = !card.classList.contains('dead');
+      fetch('/mark_dead', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,dead:isDead})})
       .then(()=>{card.classList.toggle('dead',isDead);btn.textContent=isDead?'Revive':'☠';});
     }));
   </script>
@@ -183,21 +186,30 @@ def reset(): session.pop('dump_file',None);session.pop('dead_map',None);return r
 
 @app.route('/results')
 def show_results():
-    df=session.get('dump_file');
+    df=session.get('dump_file')
     if not df or not os.path.isfile(df): return redirect(url_for('upload_file'))
-    data=json.load(open(df));dm=session.get('dead_map',{});res=[]
-    for idx,e in enumerate(data):
-        nm=e.get('Name','').lower();img=POKEAPI_CACHE.get(nm) or ''
+    data=json.load(open(df))
+    dm=session.get('dead_map',{})
+    results=[]
+    for e in data:
+        # create stable key per pokemon
+        key = f"{e.get('Name','').lower()}_{e.get('Nickname','')}_{e.get('MetLocation','')}"
+        img = POKEAPI_CACHE.get(e.get('Name','').lower()) or ''
         if not img:
-            try:r=requests.get(f'https://pokeapi.co/api/v2/pokemon/{nm}');r.raise_for_status();img=r.json().get('sprites',{}).get('other',{}).get('showdown',{}).get('front_default','')
-            except:img=''
-            POKEAPI_CACHE[nm]=img;json.dump(POKEAPI_CACHE,open(CACHE_PATH,'w'))
-        loc=LOCATION_MAP.get(str(e.get('MetLocation','')),'Unknown');dead=dm.get(str(idx),False)
-        res.append({'MetLocation':loc,'Nickname':e.get('Nickname'),'Level':e.get('Level'),'image_url':img,'dead':dead})
-    return render_template_string(RESULTS_HTML,pokemon_list=res)
+            try:
+                r=requests.get(f'https://pokeapi.co/api/v2/pokemon/{e.get("Name","").lower()}'); r.raise_for_status()
+                img=r.json().get('sprites',{}).get('other',{}).get('showdown',{}).get('front_default','')
+            except:
+                img=''
+            POKEAPI_CACHE[e.get('Name','').lower()] = img; json.dump(POKEAPI_CACHE, open(CACHE_PATH,'w'))
+        loc=LOCATION_MAP.get(str(e.get('MetLocation','')),'Unknown')
+        dead = dm.get(key, False)
+        results.append({ 'key': key, 'MetLocation': loc, 'Nickname': e.get('Nickname'), 'Level': e.get('Level'), 'image_url': img, 'dead': dead })
+    return render_template_string(RESULTS_HTML, pokemon_list=results)
 
 @app.route('/mark_dead', methods=['POST'])
 def mark_dead():
-    d=request.get_json();i=str(d.get('id'));dm=session.get('dead_map',{});dm[i]=d.get('dead',False);session['dead_map']=dm;return('','204')
+    data=request.get_json(); key=data.get('key'); is_dead=data.get('dead',False)
+    dm=session.get('dead_map',{}); dm[key] = is_dead; session['dead_map']=dm; return('',204)
 
-if __name__=='__main__':app.run(debug=True)
+if __name__=='__main__': app.run(debug=True)
