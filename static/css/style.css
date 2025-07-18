@@ -1,78 +1,79 @@
 /* Container */
 .container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2em;
-  background: #f9f9f9;
-  color: #2c3e50;
-  font-family: Arial, sans-serif;
+max-width: 800px;
+margin: 0 auto;
+padding: 2em;
+background: #f9f9f9;
+color: #2c3e50;
+font-family: Arial, sans-serif;
 }
 
 /* Headings */
 h1 {
-  color: #2c3e50;
-  margin-bottom: 1em;
+color: #2c3e50;
+margin-bottom: 1em;
 }
 
 /* Flash messages */
 .flash {
-  color: #e74c3c;
-  margin-bottom: 1em;
+color: #e74c3c;
+margin-bottom: 1em;
 }
 
 /* Forms */
 form {
-  background: #fff;
-  padding: 1em;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+background: #fff;
+padding: 1em;
+border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 input[type="file"] {
-  display: block;
-  margin-bottom: 1em;
+display: block;
+margin-bottom: 1em;
 }
 button {
-  background: #3498db;
-  color: #fff;
-  border: none;
-  padding: 0.5em 1em;
-  border-radius: 4px;
-  cursor: pointer;
+background: #3498db;
+color: #fff;
+border: none;
+padding: 0.5em 1em;
+border-radius: 4px;
+cursor: pointer;
 }
 button:hover {
-  background: #2980b9;
+background: #2980b9;
 }
 
 /* Entry cards */
 .entry {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 1em;
-  margin-bottom: 1em;
+background: #fff;
+border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+padding: 1em;
+margin-bottom: 1em;
 }
 .entry img {
-  height: 48px;
+height: 48px;
 }
 
 /* Buttons inside entries */
 button.btn {
-  background: #e74c3c;
+background: #e74c3c;
 }
 button.btn.revive {
-  background: #2ecc71;
+background: #2ecc71;
 }
 
 /* Links */
 a {
-  color: #3498db;
-  text-decoration: none;
+color: #3498db;
+text-decoration: none;
 }
 a:hover {
-  text-decoration: underline;
+text-decoration: underline;
 }
 
 /* Emphasis */
 em {
-  color: #7f8c8d;
+color: #7f8c8d;
 }
+
