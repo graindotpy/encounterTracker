@@ -57,6 +57,12 @@ INDEX_HTML = '''
 </head>
 <body>
   <div class="container">
+    <header class="page-header">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo">
+      <button id="refresh-btn" class="icon-button">
+        <img src="{{ url_for('static', filename='images/refresh.png') }}" alt="Refresh" class="icon">
+      </button>
+    </header>
     <h1>Upload Your Pokémon Save</h1>
     {% with msgs = get_flashed_messages() %}
       {% if msgs %}
@@ -68,6 +74,9 @@ INDEX_HTML = '''
       <button type="submit">Upload</button>
     </form>
   </div>
+  <script>
+    document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+  </script>
 </body>
 </html>
 '''
@@ -83,6 +92,12 @@ RESULTS_HTML = '''
 </head>
 <body>
   <div class="container">
+    <header class="page-header">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo">
+      <button id="refresh-btn" class="icon-button">
+        <img src="{{ url_for('static', filename='images/refresh.png') }}" alt="Refresh" class="icon">
+      </button>
+    </header>
     <h1>Your Encounter Tracker</h1>
     <div class="pokemon-grid">
     {% for p in pokemon_list %}
@@ -90,10 +105,10 @@ RESULTS_HTML = '''
         {% if p.image_url %}
           <img class="sprite" src="{{ p.image_url }}" alt="sprite">
         {% endif %}
-        <div>{{ p.MetLocation }}</div>
+        <div class="location">{{ p.MetLocation }}</div>
         {% if p.has_pokemon %}
-          <div>Nickname: {{ p.Nickname }}</div>
-          <div>Level: {{ p.Level }}</div>
+          <div class="nickname">Nickname: {{ p.Nickname }}</div>
+          <div class="level">Level: {{ p.Level }}</div>
           <button class="toggle-dead-btn" data-key="{{ p.key }}">{{ 'Revive' if p.dead else '☠' }}</button>
         {% else %}
           <em>(no encounters here)</em>
@@ -104,6 +119,7 @@ RESULTS_HTML = '''
     <p><a href="{{ url_for('reset') }}">Upload Another File</a></p>
   </div>
   <script>
+    document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
     document.querySelectorAll('.toggle-dead-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.key;
@@ -158,7 +174,6 @@ def show_results():
     data = json.load(open(dump_file))
     dead_map = session.get('dead_map', {})
 
-    # Gather caught Pokémon
     raw_results = []
     for e in data:
         key = f"{e.get('Name','').lower()}_{e.get('Nickname','')}_{e.get('MetLocation','')}"
@@ -184,7 +199,6 @@ def show_results():
             'has_pokemon': True
         })
 
-    # Build display list for all locations
     display_list = []
     for code in sorted(LOCATION_MAP.keys(), key=lambda x: int(x)):
         loc_name = LOCATION_MAP[code]
@@ -201,7 +215,7 @@ def show_results():
                 'dead': False,
                 'has_pokemon': False
             })
-
+    
     return render_template_string(RESULTS_HTML, pokemon_list=display_list)
 
 @app.route('/mark_dead', methods=['POST'])
