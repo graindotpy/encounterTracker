@@ -58,9 +58,9 @@ INDEX_HTML = '''
 <body>
   <div class="container">
     <header class="page-header">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" class="logo" alt="Logo">
       <button id="refresh-btn" class="icon-button">
-        <img src="{{ url_for('static', filename='images/refresh.png') }}" alt="Refresh" class="icon">
+        <img src="{{ url_for('static', filename='img/refresh.png') }}" alt="Refresh" class="icon">
       </button>
     </header>
     <h1>Upload Your Pokémon Save</h1>
@@ -75,7 +75,7 @@ INDEX_HTML = '''
     </form>
   </div>
   <script>
-    document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+    document.getElementById('refresh-btn').addEventListener('click', () => { window.location.href = "{{ url_for('reset') }}"; });
   </script>
 </body>
 </html>
@@ -93,9 +93,9 @@ RESULTS_HTML = '''
 <body>
   <div class="container">
     <header class="page-header">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" class="logo" alt="Logo">
       <button id="refresh-btn" class="icon-button">
-        <img src="{{ url_for('static', filename='images/refresh.png') }}" alt="Refresh" class="icon">
+        <img src="{{ url_for('static', filename='img/refresh.png') }}" alt="Refresh" class="icon">
       </button>
     </header>
     <h1>Your Encounter Tracker</h1>
@@ -119,7 +119,7 @@ RESULTS_HTML = '''
     <p><a href="{{ url_for('reset') }}">Upload Another File</a></p>
   </div>
   <script>
-    document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+    document.getElementById('refresh-btn').addEventListener('click', () => { window.location.href = "{{ url_for('reset') }}"; });
     document.querySelectorAll('.toggle-dead-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.key;
