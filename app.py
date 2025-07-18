@@ -49,54 +49,79 @@ def run_dump(save_path, dump_path):
 # Templates
 INDEX_HTML = '''
 <!doctype html>
-<title>Upload Your Pokémon Save</title>
-<h1>Upload Your .sav File</h1>
-{% with msgs = get_flashed_messages() %}
-  {% if msgs %}
-    {% for m in msgs %}
-      <p style="color:red;">{{ m }}</p>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
-<form method=post enctype=multipart/form-data>
-  <input type=file name=savefile>
-  <input type=submit value=Upload>
-</form>
-''' 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Your Pokémon Save</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Upload Your .sav File</h1>
+    {% with msgs = get_flashed_messages() %}
+      {% if msgs %}
+        {% for m in msgs %}
+          <div class="flash">{{ m }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <form method="post" enctype="multipart/form-data">
+      <input type="file" name="savefile">
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+</body>
+</html>
+'''
 
 RESULTS_HTML = '''
 <!doctype html>
-<title>Your Encounter Tracker</title>
-<h1>Your Encounter Tracker</h1>
-{% for p in pokemon_list %}
-  <div style="margin-bottom:1em; padding:0.5em; border-bottom:1px solid #ccc;">
-    <strong>{{ p.MetLocation }}</strong><br>
-    {% if p.has_pokemon %}
-      {% if p.image_url %}
-        <img src="{{ p.image_url }}" alt="{{ p.Nickname }}" style="height:48px;"><br>
-      {% endif %}
-      Nickname: {{ p.Nickname }}<br>
-      Level: {{ p.Level }}<br>
-      <button onclick="toggleDead('{{ p.key }}', {{ 'false' if p.dead else 'true' }})">
-        {{ 'Revive' if p.dead else '☠' }}
-      </button>
-    {% else %}
-      <em>(no encounters here)</em>
-    {% endif %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Encounter Tracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Your Encounter Tracker</h1>
+    </header>
+    {% for p in pokemon_list %}
+      <div class="entry">
+        <strong>{{ p.MetLocation }}</strong><br>
+        {% if p.has_pokemon %}
+          {% if p.image_url %}
+            <img src="{{ p.image_url }}" alt="{{ p.Nickname }}"><br>
+          {% endif %}
+          Nickname: {{ p.Nickname }}<br>
+          Level: {{ p.Level }}<br>
+          {% if p.dead %}
+            <button onclick="toggleDead('{{ p.key }}', false)">Revive</button>
+          {% else %}
+            <button onclick="toggleDead('{{ p.key }}', true)">&#9760;</button>
+          {% endif %}
+        {% else %}
+          <em>(no encounters here)</em>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <p><a href="{{ url_for('upload_file') }}">Upload Another File</a></p>
   </div>
-{% endfor %}
-<p><a href="{{ url_for('upload_file') }}">Upload Another File</a></p>
-
-<script>
-function toggleDead(key, is_dead) {
-  fetch('{{ url_for("mark_dead") }}', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({key: key, dead: is_dead})
-  }).then(()=>location.reload());
-}
-</script>
-''' 
+  <script>
+    function toggleDead(key, is_dead) {
+      fetch('{{ url_for("mark_dead") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key: key, dead: is_dead})
+      }).then(()=>location.reload());
+    }
+  </script>
+</body>
+</html>
+'''
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -115,7 +140,6 @@ def upload_file():
         file.save(save_path)
 
         dump_path = os.path.join(UPLOAD_FOLDER, f"{fid}.json")
-        # Reset dead-map on fresh upload
         session['dead_map'] = {}
         session['dump_file'] = dump_path
 
@@ -139,12 +163,9 @@ def show_results():
     data = json.load(open(dump_file))
     dead_map = session.get('dead_map', {})
 
-    # First, collect all caught Pokémon entries
     raw_results = []
     for e in data:
-        # Stable key per Pokémon
         key = f"{e.get('Name','').lower()}_{e.get('Nickname','')}_{e.get('MetLocation','')}"
-        # Get image (cached)
         name_key = e.get('Name','').lower()
         img = POKEAPI_CACHE.get(name_key) or ''
         if not img:
@@ -169,7 +190,6 @@ def show_results():
             'has_pokemon': True
         })
 
-    # Now build a display list: one entry per location (repeated for each Pokémon there)
     display_list = []
     for code in sorted(LOCATION_MAP.keys(), key=lambda x: int(x)):
         loc_name = LOCATION_MAP[code]
@@ -177,7 +197,6 @@ def show_results():
         if pokes:
             display_list.extend(pokes)
         else:
-            # No encounters here: show blank entry
             display_list.append({
                 'key': f"empty_{code}",
                 'MetLocation': loc_name,
